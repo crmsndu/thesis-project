@@ -13,15 +13,6 @@ function ham_weight(word)
     return ham_weight
 end
 
-function v2i(x)
-    l = length(x)
-    tot = 0
-    for i = 1:l
-        tot += x[i] * 2^(i - 1)
-    end
-    return tot
-end
-
 function create_GH(order)
     n = 2^order
     k = n - order - 1
@@ -38,18 +29,6 @@ function create_GH(order)
     G = hcat(Matrix{Int64}(I, k, k), P)
     H = hcat(P', Matrix{Int64}(I, n - k, n - k))
     return G, H
-end
-
-function get_h(H)
-    n = size(H)[2]
-    k = n - size(H)[1]
-    h = Vector{Int64}(undef, n)
-    h_inv = zeros(Int64, 2^(n - k))
-    for i = 1:n
-        h[i] = v2i(H[:, i])
-        h_inv[v2i(H[:, i])] = i
-    end
-    return h, h_inv
 end
 
 end
