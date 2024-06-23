@@ -122,8 +122,7 @@ function SISO_Pyndiah_no_h(H, y, iter)
     return ans
 end
 
-function SISO_Pyndiah_yes_h(H, h, h_inv, y, iter)
-    n = size(H)[2]
+function SISO_Pyndiah_yes_h(n, h, h_inv, y, iter)::Vector{Float64}
     x = zeros(Int64, n)
     s = Int64(0)
     # h = compute_h(H)
@@ -167,7 +166,7 @@ function SISO_Pyndiah_yes_h(H, h, h_inv, y, iter)
             end
         end
     end
-    maxw = -9999 * ones(n)
+    maxw = -9999.0 * ones(Float64, n)
     for i = 0:2^p-1
         xt = copy(x)
         st = copy(s)
@@ -200,13 +199,18 @@ function SISO_Pyndiah_yes_h(H, h, h_inv, y, iter)
     end
     r = zeros(Float64, n)
     for i = 1:n
-        if (maxw[i] != -9999)
+        if (maxw[i] != -9999.0)
             r[i] = (max_weight - maxw[i]) / 2
         else
             r[i] = Β[iter]
         end
     end
     ans = ((-1) .^ best_match) .* r
+    r = nothing
+    weight = nothing
+    maxw = nothing
+    x = nothing
+    # GC.gc()
     return ans
 end
 
