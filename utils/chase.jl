@@ -49,80 +49,151 @@ function SISO_Pyndiah(H, y, iter)
     α = abs.(y)
     max_weight = -9999
     best_match = copy(x)
-    xt = copy(x)
     p = 4
-    rnk = partialsortperm(α, (length(α)-p+1):length(α), rev=true)
+    rnk = partialsortperm(α, (length(α)-p+1):length(α), rev=true)   # rnk is the array of the p least reliable positions
+    weight = -9999 * ones(2^p)
     for i = 0:2^p-1
         xt = copy(x)
         st = copy(s)
-        if (i & 1 == 1)
-            xt[rnk[1]] = 1 - xt[rnk[1]]
-            st = xor(st, h[rnk[1]])
-        end
-        if (i & 2 == 2)
-            xt[rnk[2]] = 1 - xt[rnk[2]]
-            st = xor(st, h[rnk[2]])
-        end
-        if (i & 4 == 4)
-            xt[rnk[3]] = 1 - xt[rnk[3]]
-            st = xor(st, h[rnk[3]])
-        end
-        if (i & 8 == 8)
-            xt[rnk[4]] = 1 - xt[rnk[4]]
-            st = xor(st, h[rnk[4]])
+        for j = 0:p-1
+            if (i & (2^j) == (2^j))
+                xt[rnk[j+1]] = 1 - xt[rnk[j+1]]
+                st = xor(st, h[rnk[j+1]])
+            end
         end
         if (st != 0)
             idx = h_inv[st]
             if (idx != 0)
                 xt[idx] = 1 - xt[idx]
-                if (sum(((-1) .^ xt) .* y) > max_weight)
+                weight[i+1] = sum(((-1) .^ xt) .* y)
+                if (weight[i+1] > max_weight)
                     best_match = copy(xt)
                     max_weight = sum(((-1) .^ xt) .* y)
                 end
             end
         else
-            if (sum(((-1) .^ xt) .* y) > max_weight)
+            weight[i+1] = sum(((-1) .^ xt) .* y)
+            if (weight[i+1] > max_weight)
                 best_match = copy(xt)
                 max_weight = sum(((-1) .^ xt) .* y)
             end
         end
     end
     maxw = -9999 * ones(n)
-    for i = 0:15
+    for i = 0:2^p-1
         xt = copy(x)
         st = copy(s)
-        if (i & 1 == 1)
-            xt[rnk[1]] = 1 - xt[rnk[1]]
-            st = xor(st, h[rnk[1]])
-        end
-        if (i & 2 == 2)
-            xt[rnk[2]] = 1 - xt[rnk[2]]
-            st = xor(st, h[rnk[2]])
-        end
-        if (i & 4 == 4)
-            xt[rnk[3]] = 1 - xt[rnk[3]]
-            st = xor(st, h[rnk[3]])
-        end
-        if (i & 8 == 8)
-            xt[rnk[4]] = 1 - xt[rnk[4]]
-            st = xor(st, h[rnk[4]])
+        for j = 0:p-1
+            if (i & (2^j) == (2^j))
+                xt[rnk[j+1]] = 1 - xt[rnk[j+1]]
+                st = xor(st, h[rnk[j+1]])
+            end
         end
         if (st != 0)
             idx = h_inv[st]
             if (idx != 0)
                 xt[idx] = 1 - xt[idx]
-                tmp = sum(((-1) .^ xt) .* y)
-                for j = 1:n
-                    if (xt[j] != best_match[j] && tmp > maxw[j])
-                        maxw[j] = tmp
+                for j = 1:p
+                    if (xt[rnk[j]] != best_match[rnk[j]] && weight[i+1] > maxw[rnk[j]])
+                        maxw[rnk[j]] = weight[i+1]
                     end
+                end
+                if (xt[idx] != best_match[idx] && weight[i+1] > maxw[idx])
+                    maxw[idx] = weight[i+1]
                 end
             end
         else
-            tmp = sum(((-1) .^ xt) .* y)
-            for j = 1:n
-                if (xt[j] != best_match[j] && tmp > maxw[j])
-                    maxw[j] = tmp
+            for j = 1:p
+                if (xt[rnk[j]] != best_match[rnk[j]] && weight[i+1] > maxw[rnk[j]])
+                    maxw[rnk[j]] = weight[i+1]
+                end
+            end
+        end
+    end
+    r = zeros(Float64, n)
+    for i = 1:n
+        if (maxw[i] != -9999)
+            r[i] = (max_weight - maxw[i]) / 2
+        else
+            r[i] = Β[iter]
+        end
+    end
+    ans = ((-1) .^ best_match) .* r
+    return ans
+end
+
+function SIHO_Pyndiah(H, y, iter)
+    n = size(H)[2]
+    x = zeros(Int64, n)
+    s = Int64(0)
+    h = compute_h(H)
+    h_inv = compute_h_inv(H)
+    for i = 1:n
+        if (y[i] < 0)
+            x[i] = 1
+            s = xor(s, h[i])
+        end
+    end
+    α = abs.(y)
+    max_weight = -9999
+    best_match = copy(x)
+    p = 0
+    rnk = partialsortperm(α, (length(α)-p+1):length(α), rev=true)   # rnk is the array of the p least reliable positions
+    weight = -9999 * ones(2^p)
+    for i = 0:2^p-1
+        xt = copy(x)
+        st = copy(s)
+        for j = 0:p-1
+            if (i & (2^j) == (2^j))
+                xt[rnk[j+1]] = 1 - xt[rnk[j+1]]
+                st = xor(st, h[rnk[j+1]])
+            end
+        end
+        if (st != 0)
+            idx = h_inv[st]
+            if (idx != 0)
+                xt[idx] = 1 - xt[idx]
+                weight[i+1] = sum(((-1) .^ xt) .* y)
+                if (weight[i+1] > max_weight)
+                    best_match = copy(xt)
+                    max_weight = sum(((-1) .^ xt) .* y)
+                end
+            end
+        else
+            weight[i+1] = sum(((-1) .^ xt) .* y)
+            if (weight[i+1] > max_weight)
+                best_match = copy(xt)
+                max_weight = sum(((-1) .^ xt) .* y)
+            end
+        end
+    end
+    maxw = -9999 * ones(n)
+    for i = 0:2^p-1
+        xt = copy(x)
+        st = copy(s)
+        for j = 0:p-1
+            if (i & (2^j) == (2^j))
+                xt[rnk[j+1]] = 1 - xt[rnk[j+1]]
+                st = xor(st, h[rnk[j+1]])
+            end
+        end
+        if (st != 0)
+            idx = h_inv[st]
+            if (idx != 0)
+                xt[idx] = 1 - xt[idx]
+                for j = 1:p
+                    if (xt[rnk[j]] != best_match[rnk[j]] && weight[i+1] > maxw[rnk[j]])
+                        maxw[rnk[j]] = weight[i+1]
+                    end
+                end
+                if (xt[idx] != best_match[idx] && weight[i+1] > maxw[idx])
+                    maxw[idx] = weight[i+1]
+                end
+            end
+        else
+            for j = 1:p
+                if (xt[rnk[j]] != best_match[rnk[j]] && weight[i+1] > maxw[rnk[j]])
+                    maxw[rnk[j]] = weight[i+1]
                 end
             end
         end
