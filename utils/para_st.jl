@@ -20,9 +20,6 @@ end
     nn = 4
     res = 0.0
     for ii = 1:nn
-        if mod(ii, 2) == 0
-            GC.gc()
-        end
         ttt = 0
         n2 = Int64(n / 2)
         A = zeros(Int64, batch_size + 12, n2, n2)
@@ -56,6 +53,9 @@ end
         end
         p = ttt / (batch_size * n / 2 * n / 2)
         res += p
+        if mod(ii, 4) == 0
+            GC.gc()
+        end
     end
     return res / nn
 end
