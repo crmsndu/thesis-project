@@ -32,7 +32,7 @@ function compute_h(H)
     return h
 end
 
-const Β = [0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0, 1.0]
+const Β = [0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 1.0, 1.0, 1.0]
 
 function SISO_Pyndiah_no_h(H, y, iter)
     n = size(H)[2]
@@ -122,7 +122,7 @@ function SISO_Pyndiah_no_h(H, y, iter)
     return ans
 end
 
-function SISO_Pyndiah_yes_h(n, h, h_inv, y, iter)::Vector{Float64}
+function SISO_Pyndiah_yes_h(n, h, h_inv, y, iter, p)::Vector{Float64}
     x = zeros(Int64, n)
     s = Int64(0)
     # h = compute_h(H)
@@ -136,7 +136,7 @@ function SISO_Pyndiah_yes_h(n, h, h_inv, y, iter)::Vector{Float64}
     α = abs.(y)
     max_weight = -9999.0
     best_match = copy(x)
-    p = 4
+    # p = 4
     rnk = partialsortperm(α, (length(α)-p+1):length(α), rev=true)   # rnk is the array of the p least reliable positions
     weight = -9999.0 * ones(Float64, 2^p)
     for i = 0:2^p-1
